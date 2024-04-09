@@ -1,5 +1,4 @@
 
-# here is the main folder structure, please follow
 import argparse
 from credsdump.core.credential_dump import extract_credentials
 from credsdump.core.credential_assessment import assess_credentials
