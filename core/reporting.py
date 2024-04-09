@@ -9,35 +9,28 @@ from datetime import datetime
 def generate_report(assessment_results, recommendations, output_folder=None):
     if output_folder is None:
         output_folder = get_default_output_folder()
-
-    # Create a PDF report
     report_path = os.path.join(output_folder, 'authguard_report.pdf')
     generate_pdf_report(report_path, assessment_results, recommendations)
 
     print(f"Report generated successfully. Check '{report_path}'.")
 
 def get_default_output_folder():
-    # Use temp/ on Linux and downloads/ on Windows
     return 'temp' if os.name == 'posix' else 'downloads'
 
 def generate_pdf_report(report_path, assessment_results, recommendations):
     doc = SimpleDocTemplate(report_path, pagesize=letter)
     styles = getSampleStyleSheet()
 
-    # Report content
     report_content = []
 
-    # Title
+ 
     title = Paragraph("<b>AuthGuard Security Assessment Report</b>", styles['Title'])
     report_content.append(title)
 
-    # Date
     current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     date_str = Paragraph(f"<i>Date: {current_date}</i>", styles['Normal'])
     report_content.append(date_str)
     report_content.append(Spacer(1, 12))
-
-    # Assessment Results Section
     assessment_section = [
         Paragraph("<b>Assessment Results</b>", styles['Heading1']),
         Spacer(1, 12),
@@ -62,7 +55,6 @@ def generate_pdf_report(report_path, assessment_results, recommendations):
     report_content.extend(assessment_section)
     report_content.append(Spacer(1, 12))
 
-    # Recommendations Section
     recommendations_section = [
         Paragraph("<b>Recommendations</b>", styles['Heading1']),
     ]
@@ -71,12 +63,10 @@ def generate_pdf_report(report_path, assessment_results, recommendations):
     report_content.extend(recommendations_section)
     report_content.append(Spacer(1, 12))
 
-    # Add a Statistics Section to the report
     statistics_section = [
         Paragraph("<b>Statistics</b>", styles['Heading1']),
         Spacer(1, 12),
         Paragraph(f"Total Assessments: {len(assessment_results)}", styles['Normal']),
-        # Add more statistics as the time goes by
     ]
     report_content.extend(statistics_section)
 
