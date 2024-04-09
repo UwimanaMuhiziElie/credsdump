@@ -20,17 +20,13 @@ def generate_password_recommendations(assessment_results):
         password_suggestions = result['password_suggestions']
         educational_insights = result['educational_insights']
 
-        # Example recommendation logic based on password strength
         if password_strength < custom_criteria.get('minimum_strength', 3):
             recommendations.append(f"User '{username}' has a weak password. Consider enforcing stronger password policies.")
 
-        # Additional recommendations based on specific criteria
         recommendations.extend(generate_custom_recommendations(username, password_strength, password_suggestions))
 
-        # Educational insights are valuable for user awareness
         recommendations.extend(educational_insights)
 
-    # Add actionable recommendations
     recommendations.extend(generate_actionable_recommendations(assessment_results))
 
     return recommendations
@@ -49,12 +45,10 @@ def generate_custom_recommendations(username, password_strength, password_sugges
     """
     custom_recommendations = []
 
-    # Recommend changing the password if it's compromised
     if 'compromised' in password_suggestions:
         custom_recommendations.append(f"User '{username}' has a password compromised in data breaches. "
                                       "Consider changing it immediately.")
 
-    # Additional custom recommendations
     if 'reused' in password_suggestions:
         custom_recommendations.append(f"User '{username}' has reused a password. "
                                       "Consider using a unique password for each account.")
@@ -63,7 +57,6 @@ def generate_custom_recommendations(username, password_strength, password_sugges
         custom_recommendations.append(f"User '{username}' has an extremely weak password. "
                                       "Enforce a minimum password length and complexity.")
 
-    # Add more custom recommendations based on specific criteria or red teaming 
 
     return custom_recommendations
 
@@ -80,7 +73,6 @@ def generate_actionable_recommendations(assessment_results):
     """
     actionable_recommendations = []
 
-    # Suggest password policy changes for users with weak passwords
     for result in assessment_results:
         username = result['username']
         password_strength = result['password_strength']
@@ -89,10 +81,8 @@ def generate_actionable_recommendations(assessment_results):
             actionable_recommendations.append(f"User '{username}' has a weak password. "
                                               "Consider enforcing stronger password policies.")
 
-    # Suggest MFA implementation for all users
     actionable_recommendations.append("Consider implementing multi-factor authentication (MFA) for extra security security layer.")
 
-    # Alert on compromised credentials that should be changed immediately
     for result in assessment_results:
         username = result['username']
         password_suggestions = result['password_suggestions']
