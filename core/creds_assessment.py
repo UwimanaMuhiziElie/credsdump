@@ -1,4 +1,3 @@
-# authguard/core/credential_assessment.py
 
 import zxcvbn 
 from authguard.core.utils import load_custom_criteria
@@ -23,7 +22,6 @@ def assess_password_strength(password, custom_criteria=None):
     strength = result['score']
     suggestions = result['feedback']['suggestions']
 
-    # Additional educational insights based on the password assessment
     educational_insights = generate_educational_insights(password, strength, suggestions)
 
     return strength, suggestions, educational_insights
@@ -53,7 +51,6 @@ def generate_educational_insights(password, strength, suggestions):
     elif strength == 4:
         insights.append("This password is strong. Keep up the good work!")
 
-    # Additional insights based on specific suggestions from zxcvbn
     insights.extend(suggestions)
 
     return insights
@@ -77,7 +74,6 @@ def assess_credentials(credentials, custom_criteria=None, max_workers=None):
         custom_criteria = load_custom_criteria()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Using ThreadPoolExecutor for parallel assessment
         future_to_credential = {executor.submit(assess_credential, cred, custom_criteria): cred for cred in credentials}
 
         for future in concurrent.futures.as_completed(future_to_credential):
@@ -104,7 +100,7 @@ def assess_credential(credential, custom_criteria):
     username = credential['username']
     password = credential['password']
 
-    # Assess password strength
+
     strength, suggestions, educational_insights = assess_password_strength(password, custom_criteria=custom_criteria)
 
     assessment_result = {
